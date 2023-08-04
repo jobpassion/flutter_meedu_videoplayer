@@ -24,7 +24,7 @@ class Durations {
     this.videoFitOverlayDuration = const Duration(milliseconds: 250),
     this.volumeOverlayDuration = const Duration(milliseconds: 250),
     this.controlsDuration = const Duration(milliseconds: 250),
-    this.controlsAutoHideDuration = const Duration(milliseconds: 1500),
+    this.controlsAutoHideDuration = const Duration(milliseconds: 5000),
     this.brightnessOverlayDuration = const Duration(milliseconds: 250),
     this.seekDuration = const Duration(milliseconds: 250),
   });

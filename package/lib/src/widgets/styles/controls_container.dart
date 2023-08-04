@@ -120,7 +120,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
     final double diff = _horizontalDragStartOffset.dx - localPosition.dx;
     final int duration = controller.duration.value.inSeconds;
     final int position = controller.position.value.inSeconds;
-    final int seconds = -(diff * duration / 5000).round();
+    final int seconds = -(diff * duration / 1000).round();
     final int relativePosition = position + seconds;
     if (relativePosition <= duration && relativePosition >= 0) {
       controller.swipeDuration.value = seconds;
@@ -278,7 +278,8 @@ class _ControlsContainerState extends State<ControlsContainer> {
                         Container(color: Colors.black38),
                         Container(
                           height: _.volume.value * widget.responsive.height / 2,
-                          color: Colors.blue,
+                          // color: Colors.blue,
+                          color: Color.fromRGBO(87, 137, 60, 1),
                         ),
                         Container(
                             padding: const EdgeInsets.all(5),
@@ -317,7 +318,8 @@ class _ControlsContainerState extends State<ControlsContainer> {
                         Container(
                           height:
                               _.brightness.value * widget.responsive.height / 2,
-                          color: Colors.blue,
+                          // color: Colors.blue,
+                          color: Color.fromRGBO(87, 137, 60, 1),
                         ),
                         Container(
                             padding: const EdgeInsets.all(5),
@@ -415,6 +417,8 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
   Widget videoControls(MeeduPlayerController _, BuildContext context) {
     return GestureDetector(
+      onLongPressStart: (a)=>_.setPlaybackSpeed(2),
+      onLongPressEnd: (a)=>_.setPlaybackSpeed(1),
       onTap: () {
         if (!_.mobileControls) {
           if (tappedTwice) {

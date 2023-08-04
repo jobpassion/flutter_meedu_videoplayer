@@ -10,6 +10,8 @@ import 'package:flutter_meedu_videoplayer/meedu_player.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:universal_platform/universal_platform.dart';
+import 'dart:io';
+
 
 /// An enumeration of the different styles that can be applied to controls, such
 /// as buttons and icons and layouts.
@@ -23,7 +25,7 @@ enum ControlsStyle {
 
 class MeeduPlayerController {
   /// the video_player controller
-  VideoPlayerController? _videoPlayerController;
+  VideoPlayerController? videoPlayerControllerX;
   final _pipManager = PipManager();
   StreamSubscription? _playerEventSubs;
 
@@ -79,7 +81,7 @@ class MeeduPlayerController {
   Rx<bool> bufferingVideoDuration = false.obs;
 
   Rx<bool> videoFitChanged = false.obs;
-  final Rx<BoxFit> _videoFit = Rx(BoxFit.fill);
+  final Rx<BoxFit> _videoFit = Rx(BoxFit.cover);
   //Rx<double> scale = 1.0.obs;
   Rx<bool> rewindIcons = false.obs;
   Rx<bool> forwardIcons = false.obs;
@@ -173,7 +175,7 @@ class MeeduPlayerController {
   Stream<List<DurationRange>> get onBufferedChanged => _buffered.stream;
 
   /// [videoPlayerController] instace of VideoPlayerController
-  VideoPlayerController? get videoPlayerController => _videoPlayerController;
+  VideoPlayerController? get videoPlayerController => videoPlayerControllerX;
 
   /// the playback speed default value is 1.0
   double get playbackSpeed => _playbackSpeed.value;
@@ -253,6 +255,7 @@ class MeeduPlayerController {
   /// [manageWakeLock] if the player should use wakelock
   /// [errorText] message to show when the load process failed
   MeeduPlayerController({
+    this.videoPlayerControllerX,
     this.screenManager = const ScreenManager(),
     this.colorTheme = Colors.redAccent,
     Widget? loadingWidget,
@@ -358,13 +361,13 @@ class MeeduPlayerController {
         dataSource.source!,
         formatHint: dataSource.formatHint,
         closedCaptionFile: dataSource.closedCaptionFile,
-        httpHeaders: dataSource.httpHeaders ?? {},
+        // httpHeaders: dataSource.httpHeaders ?? {},
       );
     } else {
       tmp = VideoPlayerController.file(
         dataSource.file!,
         closedCaptionFile: dataSource.closedCaptionFile,
-        httpHeaders: dataSource.httpHeaders ?? {},
+        // httpHeaders: dataSource.httpHeaders ?? {},
       );
     }
     return tmp;
@@ -401,7 +404,7 @@ class MeeduPlayerController {
   }
 
   void _listener() {
-    final value = _videoPlayerController!.value;
+    final value = videoPlayerControllerX!.value;
     //update duration
     duration.value = value.duration;
     // set the current video position
@@ -450,16 +453,16 @@ class MeeduPlayerController {
       dataStatus.status.value = DataStatus.loading;
 
       // if we are playing a video
-      if (_videoPlayerController != null &&
-          _videoPlayerController!.value.isPlaying) {
+      if (videoPlayerControllerX != null &&
+          videoPlayerControllerX!.value.isPlaying) {
         await pause(notify: false);
       }
 
       // save the current video controller to be disposed in the next frame
-      VideoPlayerController? oldController = _videoPlayerController;
+      VideoPlayerController? oldController = videoPlayerControllerX;
 
-      _videoPlayerController = _createVideoController(dataSource);
-      await _videoPlayerController!.initialize();
+      videoPlayerControllerX = _createVideoController(dataSource);
+      await videoPlayerControllerX!.initialize();
 
       if (oldController != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -470,23 +473,77 @@ class MeeduPlayerController {
       }
 
       // set the video duration
-      customDebugPrint("Duration is ${_videoPlayerController!.value.duration}");
+      customDebugPrint("Duration is ${videoPlayerControllerX!.value.duration}");
 
-      _duration.value = _videoPlayerController!.value.duration;
+      _duration.value = videoPlayerControllerX!.value.duration;
 
       /// notify that video was loaded
       dataStatus.status.value = DataStatus.loaded;
 
       await _initializePlayer(seekTo: seekTo);
       // listen the video player events
-      _videoPlayerController!.addListener(_listener);
+      videoPlayerControllerX!.addListener(_listener);
     } catch (e, s) {
       customDebugPrint(e);
       customDebugPrint(s);
-      _errorText ??= _videoPlayerController!.value.errorDescription ?? "$e";
+      _errorText ??= videoPlayerControllerX!.value.errorDescription ?? "$e";
       dataStatus.status.value = DataStatus.error;
     }
   }
+
+  Future<void> init(
+      VideoPlayerController videoPlayerController,
+      {
+        bool autoplay = true,
+        bool looping = false,
+        Duration seekTo = Duration.zero,
+      }) async {
+    try {
+      _autoPlay = autoplay;
+      _looping = looping;
+      dataStatus.status.value = DataStatus.loading;
+
+      // if we are playing a video
+      // if (videoPlayerControllerX != null &&
+      //     videoPlayerControllerX!.value.isPlaying) {
+      //   await pause(notify: false);
+      // }
+      //
+      // // save the current video controller to be disposed in the next frame
+      VideoPlayerController? oldController = videoPlayerControllerX;
+
+      videoPlayerControllerX = videoPlayerController;
+
+      // videoPlayerControllerX = _createVideoController(dataSource);
+      // await videoPlayerControllerX!.initialize();
+
+      if (oldController != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          oldController.removeListener(_listener);
+          // await oldController
+          //     .dispose(); // dispose the previous video controller
+        });
+      }
+
+      // set the video duration
+      customDebugPrint("Duration is ${videoPlayerControllerX!.value.duration}");
+
+      _duration.value = videoPlayerControllerX!.value.duration;
+
+      /// notify that video was loaded
+      dataStatus.status.value = DataStatus.loaded;
+
+      await _initializePlayer(seekTo: seekTo);
+      // listen the video player events
+      videoPlayerControllerX!.addListener(_listener);
+    } catch (e, s) {
+      customDebugPrint(e);
+      customDebugPrint(s);
+      _errorText ??= videoPlayerControllerX!.value.errorDescription ?? "$e";
+      dataStatus.status.value = DataStatus.error;
+    }
+  }
+
 
   /// play the current video
   ///
@@ -496,7 +553,7 @@ class MeeduPlayerController {
       await seekTo(Duration.zero);
     }
 
-    await _videoPlayerController?.play();
+    await videoPlayerControllerX?.play();
     await getCurrentVolume();
     await getCurrentBrightness();
 
@@ -512,7 +569,7 @@ class MeeduPlayerController {
   ///
   /// [notify] if is true and the events is not null we notifiy the event
   Future<void> pause({bool notify = true}) async {
-    await _videoPlayerController?.pause();
+    await videoPlayerControllerX?.pause();
     playerStatus.status.value = PlayerStatus.paused;
   }
 
@@ -537,7 +594,15 @@ class MeeduPlayerController {
     customDebugPrint(
         "duration in seek function is ${duration.value.toString()}");
     if (duration.value.inSeconds != 0) {
-      await _videoPlayerController?.seekTo(position);
+      await videoPlayerControllerX?.seekTo(position);
+
+      if (playbackSpeed != 1.0 && Platform.isIOS) {
+        try {
+          await Future.delayed(const Duration(milliseconds: 300), () {
+            videoPlayerControllerX?.setPlaybackSpeed(playbackSpeed);
+          });
+        } catch (_) {}
+      }
 
       // if (playerStatus.stopped) {
       //   play();
@@ -549,7 +614,7 @@ class MeeduPlayerController {
         //_timerForSeek = null;
         customDebugPrint("SEEK CALLED");
         if (duration.value.inSeconds != 0) {
-          await _videoPlayerController?.seekTo(position);
+          await videoPlayerControllerX?.seekTo(position);
 
           // if (playerStatus.stopped) {
           //   play();
@@ -579,12 +644,12 @@ class MeeduPlayerController {
   ///   possible that your specific video cannot be slowed down, in which case
   ///   the plugin also reports errors.
   Future<void> setPlaybackSpeed(double speed) async {
-    await _videoPlayerController?.setPlaybackSpeed(speed);
+    await videoPlayerControllerX?.setPlaybackSpeed(speed);
     _playbackSpeed.value = speed;
   }
 
   Future<void> togglePlaybackSpeed() async {
-    List<double> allowedSpeeds = [0.25, 0.5, 0.75, 1.0, 1.25, 1.50, 1.75, 2.0];
+    List<double> allowedSpeeds = [1.0, 1.25, 1.50, 1.75, 2.0];
     if (allowedSpeeds.indexOf(_playbackSpeed.value) <
         allowedSpeeds.length - 1) {
       setPlaybackSpeed(
@@ -596,7 +661,7 @@ class MeeduPlayerController {
 
   /// Sets whether or not the video should loop after playing once
   Future<void> setLooping(bool looping) async {
-    await _videoPlayerController?.setLooping(looping);
+    await videoPlayerControllerX?.setLooping(looping);
     _looping = looping;
   }
 
@@ -617,7 +682,7 @@ class MeeduPlayerController {
   /// [enabled] if is true the video player is muted
   Future<void> setMute(bool enabled) async {
     if (enabled) {
-      _volumeBeforeMute = _videoPlayerController!.value.volume;
+      _volumeBeforeMute = videoPlayerControllerX!.value.volume;
     }
     _mute.value = enabled;
     await setVolume(enabled ? 0 : _volumeBeforeMute, videoPlayerVolume: true);
@@ -648,7 +713,7 @@ class MeeduPlayerController {
 
   Future<void> getCurrentVolume() async {
     if (desktopOrWeb) {
-      _currentVolume.value = _videoPlayerController?.value.volume ?? 0;
+      _currentVolume.value = videoPlayerControllerX?.value.volume ?? 0;
     } else {
       try {
         _currentVolume.value = await VolumeController().getVolume();
@@ -686,7 +751,7 @@ class MeeduPlayerController {
       volume.value = volumeNew;
       if (desktopOrWeb || videoPlayerVolume) {
         customDebugPrint("volume is $volumeNew");
-        await _videoPlayerController?.setVolume(volumeNew);
+        await videoPlayerControllerX?.setVolume(volumeNew);
         volumeUpdated();
       } else {
         try {
@@ -834,9 +899,9 @@ class MeeduPlayerController {
     playerStatus.status.close();
     dataStatus.status.close();
 
-    _videoPlayerController?.removeListener(_listener);
-    await _videoPlayerController?.dispose();
-    _videoPlayerController = null;
+    videoPlayerControllerX?.removeListener(_listener);
+    // await videoPlayerControllerX?.dispose();
+    videoPlayerControllerX = null;
   }
 
   /// enable or diable the visibility of ClosedCaptionFile
@@ -952,7 +1017,7 @@ class MeeduPlayerController {
     }
     int position = 0;
 
-    position = _videoPlayerController!.value.position.inSeconds;
+    position = videoPlayerControllerX!.value.position.inSeconds;
 
     await seekTo(Duration(seconds: position + seconds));
     if (playing) {
@@ -981,7 +1046,7 @@ class MeeduPlayerController {
       if (desktopOrWeb) {
         await screenManager.setWindowsFullScreen(false, this);
       } else {
-        await screenManager.setDefaultOverlaysAndOrientations();
+        // await screenManager.setDefaultOverlaysAndOrientations();
       }
     }
     fullscreen.value = false;
@@ -1005,9 +1070,9 @@ class MeeduPlayerController {
         Wakelock.disable();
       }
 
-      _videoPlayerController?.removeListener(_listener);
-      await _videoPlayerController?.dispose();
-      _videoPlayerController = null;
+      videoPlayerControllerX?.removeListener(_listener);
+      await videoPlayerControllerX?.dispose();
+      videoPlayerControllerX = null;
 
       //disposeVideoPlayerController();
       if (onVideoPlayerClosed != null) {
