@@ -21,6 +21,8 @@ class LoggingActionDispatcher extends ActionDispatcher {
 }
 
 class MeeduVideoPlayer extends StatefulWidget {
+  static GlobalKey meeduKeyFull1 = GlobalKey();
+
   final MeeduPlayerController controller;
 
   final Widget Function(
@@ -148,19 +150,23 @@ class _MeeduVideoPlayerState extends State<MeeduVideoPlayer> {
                             child: FittedBox(
                               clipBehavior: Clip.hardEdge,
                               fit: widget.controller.videoFit.value,
-                              child: SizedBox(
-                                width: videoWidth(
-                                  _.videoPlayerController,
+                              child:
+                              // Column(children: [
+                                SizedBox(
+                                  width: videoWidth(
+                                    _.videoPlayerController,
+                                  ),
+                                  height: videoHeight(
+                                    _.videoPlayerController,
+                                  ),
+                                  // width: 640,
+                                  // height: 480,
+                                  child: _.videoPlayerController != null
+                                      ? RepaintBoundary(key: MeeduVideoPlayer.meeduKeyFull1,child:VideoPlayer(_.videoPlayerController!))
+                                      : Container(),
                                 ),
-                                height: videoHeight(
-                                  _.videoPlayerController,
-                                ),
-                                // width: 640,
-                                // height: 480,
-                                child: _.videoPlayerController != null
-                                    ? VideoPlayer(_.videoPlayerController!)
-                                    : Container(),
-                              ),
+                              //   if (_.videoPlayerController != null && widget.controller.videoFit.value == BoxFit.contain)VideoProgressIndicator(_.videoPlayerController!, allowScrubbing: false,colors: VideoProgressColors(playedColor: _.colorTheme),),
+                              // ],) ,
                             ),
                           );
                         }),

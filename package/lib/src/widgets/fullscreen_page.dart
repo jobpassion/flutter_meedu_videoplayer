@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_meedu_videoplayer/meedu_player.dart';
 
 class MeeduPlayerFullscreenPage extends StatefulWidget {
+  static GlobalKey meeduKeyFull2 = GlobalKey();
+
   final MeeduPlayerController controller;
   final bool disposePlayer;
   const MeeduPlayerFullscreenPage(
       {Key? key, required this.controller, required this.disposePlayer})
       : super(key: key);
   @override
-  State<MeeduPlayerFullscreenPage> createState() =>
-      _MeeduPlayerFullscreenPageState();
+  State<MeeduPlayerFullscreenPage> createState() => _MeeduPlayerFullscreenPageState();
 }
 
 class _MeeduPlayerFullscreenPageState extends State<MeeduPlayerFullscreenPage> {
@@ -17,9 +18,9 @@ class _MeeduPlayerFullscreenPageState extends State<MeeduPlayerFullscreenPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: MeeduVideoPlayer(
+      body: RepaintBoundary(key: MeeduPlayerFullscreenPage.meeduKeyFull2,child:MeeduVideoPlayer(
         controller: widget.controller,
-      ),
+      )),
     );
   }
 

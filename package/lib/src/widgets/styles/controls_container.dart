@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_meedu_videoplayer/meedu_player.dart';
+import 'package:flutter_vibrate/flutter_vibrate.dart';
 
 class ControlsContainer extends StatefulWidget {
   final Widget child;
@@ -417,7 +418,10 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
   Widget videoControls(MeeduPlayerController _, BuildContext context) {
     return GestureDetector(
-      onLongPressStart: (a)=>_.setPlaybackSpeed(2),
+      onLongPressStart: (a){
+        _.setPlaybackSpeed(2);
+        Vibrate.feedback(FeedbackType.medium);
+      },
       onLongPressEnd: (a)=>_.setPlaybackSpeed(1),
       onTap: () {
         if (!_.mobileControls) {

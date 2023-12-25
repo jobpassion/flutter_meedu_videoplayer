@@ -11,6 +11,7 @@ import 'package:volume_controller/volume_controller.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'dart:io';
+import 'helpers/durations.dart' as dura;
 
 
 /// An enumeration of the different styles that can be applied to controls, such
@@ -24,6 +25,7 @@ enum ControlsStyle {
 }
 
 class MeeduPlayerController {
+  Timer? speedTimer;
   /// the video_player controller
   VideoPlayerController? videoPlayerControllerX;
   final _pipManager = PipManager();
@@ -244,7 +246,7 @@ class MeeduPlayerController {
 
   Responsive responsive = Responsive();
 
-  final Durations durations;
+  final dura.Durations durations;
 
   final EnabledOverlays enabledOverlays;
 
@@ -283,7 +285,7 @@ class MeeduPlayerController {
     this.enabledControls = const EnabledControls(),
     this.enabledOverlays = const EnabledOverlays(),
     Responsive? responsive,
-    this.durations = const Durations(),
+    this.durations = const dura.Durations(),
     this.onVideoPlayerClosed,
   }) {
     if (responsive != null) {
@@ -405,6 +407,10 @@ class MeeduPlayerController {
 
   void _listener() {
     final value = videoPlayerControllerX!.value;
+    dataStatus.status.value = videoPlayerControllerX!.value.isInitialized ? DataStatus.loaded : DataStatus.loading;
+    if(value.isPlaying){
+      playerStatus.status.value = PlayerStatus.playing;
+    }
     //update duration
     duration.value = value.duration;
     // set the current video position
@@ -499,6 +505,9 @@ class MeeduPlayerController {
         Duration seekTo = Duration.zero,
       }) async {
     try {
+      if(videoPlayerControllerX == videoPlayerController){
+        return;
+      }
       _autoPlay = autoplay;
       _looping = looping;
       dataStatus.status.value = DataStatus.loading;
@@ -531,9 +540,14 @@ class MeeduPlayerController {
       _duration.value = videoPlayerControllerX!.value.duration;
 
       /// notify that video was loaded
-      dataStatus.status.value = DataStatus.loaded;
+      dataStatus.status.value = videoPlayerControllerX!.value.isInitialized ? DataStatus.loaded : DataStatus.loading;
 
-      await _initializePlayer(seekTo: seekTo);
+      // await _initializePlayer(seekTo: seekTo);
+      _hideTaskControls();
+      if(videoPlayerController.value.isPlaying){
+        playerStatus.status.value = PlayerStatus.playing;
+      }else{
+      }
       // listen the video player events
       videoPlayerControllerX!.addListener(_listener);
     } catch (e, s) {
@@ -646,6 +660,16 @@ class MeeduPlayerController {
   Future<void> setPlaybackSpeed(double speed) async {
     await videoPlayerControllerX?.setPlaybackSpeed(speed);
     _playbackSpeed.value = speed;
+    if(speed != 1 && null == speedTimer && Platform.isIOS){
+      speedTimer = Timer.periodic(Duration(seconds: 1), continueSetSpeed);
+    }else if(speed == 1 && null != speedTimer){
+      speedTimer?.cancel();
+      speedTimer= null;
+    }
+  }
+
+  void continueSetSpeed(a){
+    videoPlayerControllerX?.setPlaybackSpeed(_playbackSpeed.value);
   }
 
   Future<void> togglePlaybackSpeed() async {
@@ -902,6 +926,10 @@ class MeeduPlayerController {
     videoPlayerControllerX?.removeListener(_listener);
     // await videoPlayerControllerX?.dispose();
     videoPlayerControllerX = null;
+    if(null != speedTimer){
+      speedTimer?.cancel();
+      speedTimer= null;
+    }
   }
 
   /// enable or diable the visibility of ClosedCaptionFile
