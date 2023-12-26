@@ -575,11 +575,11 @@ class _ControlsContainerState extends State<ControlsContainer> {
 
   Widget videoControls(MeeduPlayerController _, BuildContext context) {
     return GestureDetector(
-      onLongPressStart: (a){
-        _.setPlaybackSpeed(2);
-        Vibrate.feedback(FeedbackType.medium);
-      },
-      onLongPressEnd: (a)=>_.setPlaybackSpeed(1),
+      // onLongPressStart: (a){
+      //   _.setPlaybackSpeed(2);
+      //   Vibrate.feedback(FeedbackType.medium);
+      // },
+      // onLongPressEnd: (a)=>_.setPlaybackSpeed(1),
       onPanStart: UniversalPlatform.isDesktop ? (__) => windowDrag(_) : null,
         onTap: () => onTap(_),
         onLongPressStart:
@@ -588,6 +588,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
                     if (_.customCallbacks.onLongPressStartedCallback != null) {
                       _.customCallbacks.onLongPressStartedCallback!(_);
                     } else {
+                      Vibrate.feedback(FeedbackType.medium);
                       _.setPlaybackSpeed(2);
                     }
                   }

@@ -99,7 +99,7 @@ class MeeduPlayerController {
   Rx<bool> bufferingVideoDuration = false.obs;
 
   Rx<bool> videoFitChanged = false.obs;
-  final Rx<BoxFit> _videoFit = Rx(BoxFit.cover);
+  final Rx<BoxFit> _videoFit;
 
   final Rx<bool> forceUIRefreshAfterFullScreen = false.obs;
 
@@ -338,7 +338,7 @@ class MeeduPlayerController {
     this.durations = const dura.Durations(),
     this.onVideoPlayerClosed,
     BoxFit? initialFit,
-  }) : _videoFit = Rx(initialFit ?? BoxFit.fill) {
+  }) : _videoFit = Rx(initialFit ?? BoxFit.cover) {
     if (responsive != null) {
       this.responsive = responsive;
     }
@@ -416,12 +416,18 @@ class MeeduPlayerController {
         package: dataSource.package,
       );
     } else if (dataSource.type == DataSourceType.network) {
-      tmp = VideoPlayerController.networkUrl(
-        Uri.parse(dataSource.source!),
+      tmp = VideoPlayerController.network(
+        dataSource.source!,
         formatHint: dataSource.formatHint,
         closedCaptionFile: dataSource.closedCaptionFile,
         // httpHeaders: dataSource.httpHeaders ?? {},
       );
+      // tmp = VideoPlayerController.networkUrl(
+      //   Uri.parse(dataSource.source!),
+      //   formatHint: dataSource.formatHint,
+      //   closedCaptionFile: dataSource.closedCaptionFile,
+      //   // httpHeaders: dataSource.httpHeaders ?? {},
+      // );
     } else {
       tmp = VideoPlayerController.file(
         dataSource.file!,
@@ -463,7 +469,7 @@ class MeeduPlayerController {
   }
 
   void _listener() {
-    final value = _videoPlayerController!.value;
+    final value = videoPlayerControllerX!.value;
     dataStatus.status.value = videoPlayerController!.value.isInitialized ? DataStatus.loaded : DataStatus.loading;
     if(value.isPlaying){
       playerStatus.status.value = PlayerStatus.playing;
@@ -530,16 +536,16 @@ class MeeduPlayerController {
       dataStatus.status.value = DataStatus.loading;
 
       // if we are playing a video
-      if (_videoPlayerController != null &&
-          _videoPlayerController!.value.isPlaying) {
+      if (videoPlayerControllerX != null &&
+          videoPlayerControllerX!.value.isPlaying) {
         await pause(notify: false);
       }
 
       // save the current video controller to be disposed in the next frame
-      VideoPlayerController? oldController = _videoPlayerController;
+      VideoPlayerController? oldController = videoPlayerControllerX;
 
-      _videoPlayerController = _createVideoController(dataSource);
-      await _videoPlayerController!.initialize();
+      videoPlayerControllerX = _createVideoController(dataSource);
+      await videoPlayerControllerX!.initialize();
 
       if (oldController != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -550,20 +556,20 @@ class MeeduPlayerController {
       }
 
       // set the video duration
-      customDebugPrint("Duration is ${_videoPlayerController!.value.duration}");
+      customDebugPrint("Duration is ${videoPlayerControllerX!.value.duration}");
 
-      _duration.value = _videoPlayerController!.value.duration;
+      _duration.value = videoPlayerControllerX!.value.duration;
 
       /// notify that video was loaded
       dataStatus.status.value = DataStatus.loaded;
 
       await _initializePlayer(seekTo: seekTo);
       // listen the video player events
-      _videoPlayerController!.addListener(_listener);
+      videoPlayerControllerX!.addListener(_listener);
     } catch (e, s) {
       customDebugPrint(e);
       customDebugPrint(s);
-      _errorText ??= _videoPlayerController!.value.errorDescription ?? "$e";
+      _errorText ??= videoPlayerControllerX!.value.errorDescription ?? "$e";
       dataStatus.status.value = DataStatus.error;
     }
   }
@@ -638,7 +644,7 @@ class MeeduPlayerController {
       await seekTo(Duration.zero);
     }
 
-    await _videoPlayerController?.play();
+    await videoPlayerControllerX?.play();
     await getCurrentVolume();
     await getCurrentBrightness();
 
@@ -654,7 +660,7 @@ class MeeduPlayerController {
   ///
   /// [notify] if is true and the events is not null we notifiy the event
   Future<void> pause({bool notify = true}) async {
-    await _videoPlayerController?.pause();
+    await videoPlayerControllerX?.pause();
     playerStatus.status.value = PlayerStatus.paused;
   }
 
@@ -683,9 +689,9 @@ class MeeduPlayerController {
 
     if (duration.value.inSeconds != 0) {
       customDebugPrint(
-          "video controller duration ${_videoPlayerController!.value.duration.toString()}");
+          "video controller duration ${videoPlayerControllerX!.value.duration.toString()}");
 
-      await _videoPlayerController?.seekTo(position);
+      await videoPlayerControllerX?.seekTo(position);
       customDebugPrint("position after seek is ${_position.value.toString()}");
       if (playbackSpeed != 1.0 && Platform.isIOS) {
         try {
@@ -732,7 +738,7 @@ class MeeduPlayerController {
   //     //_timerForSeek = null;
   //     customDebugPrint("Re SEEK CALLED");
   //     if (duration.value.inSeconds != 0) {
-  //       await _videoPlayerController?.seekTo(position);
+  //       await videoPlayerControllerX?.seekTo(position);
 
   //       // if (playerStatus.stopped) {
   //       //   play();
@@ -761,7 +767,7 @@ class MeeduPlayerController {
   ///   possible that your specific video cannot be slowed down, in which case
   ///   the plugin also reports errors.
   Future<void> setPlaybackSpeed(double speed) async {
-    await _videoPlayerController?.setPlaybackSpeed(speed);
+    await videoPlayerControllerX?.setPlaybackSpeed(speed);
     _playbackSpeed.value = speed;
     if(speed != 1 && null == speedTimer && Platform.isIOS){
       speedTimer = Timer.periodic(Duration(seconds: 1), continueSetSpeed);
@@ -788,7 +794,7 @@ class MeeduPlayerController {
 
   /// Sets whether or not the video should loop after playing once
   Future<void> setLooping(bool looping) async {
-    await _videoPlayerController?.setLooping(looping);
+    await videoPlayerControllerX?.setLooping(looping);
     _looping = looping;
   }
 
@@ -811,7 +817,7 @@ class MeeduPlayerController {
   /// [enabled] if is true the video player is muted
   Future<void> setMute(bool enabled) async {
     if (enabled) {
-      _volumeBeforeMute = _videoPlayerController!.value.volume;
+      _volumeBeforeMute = videoPlayerControllerX!.value.volume;
     }
     _mute.value = enabled;
     await setVolume(enabled ? 0 : _volumeBeforeMute, videoPlayerVolume: true);
@@ -842,7 +848,7 @@ class MeeduPlayerController {
 
   Future<void> getCurrentVolume() async {
     if (desktopOrWeb) {
-      _currentVolume.value = _videoPlayerController?.value.volume ?? 0;
+      _currentVolume.value = videoPlayerControllerX?.value.volume ?? 0;
     } else {
       try {
         _currentVolume.value = await VolumeController().getVolume();
@@ -880,7 +886,7 @@ class MeeduPlayerController {
       volume.value = volumeNew;
       if (desktopOrWeb || videoPlayerVolume) {
         customDebugPrint("volume is $volumeNew");
-        await _videoPlayerController?.setVolume(volumeNew);
+        await videoPlayerControllerX?.setVolume(volumeNew);
         volumeUpdated();
       } else {
         try {
@@ -1050,9 +1056,9 @@ class MeeduPlayerController {
     playerStatus.status.close();
     dataStatus.status.close();
 
-    _videoPlayerController?.removeListener(_listener);
-    // await _videoPlayerController?.dispose();
-    _videoPlayerController = null;
+    videoPlayerControllerX?.removeListener(_listener);
+    // await videoPlayerControllerX?.dispose();
+    videoPlayerControllerX = null;
     if(null != speedTimer){
       speedTimer?.cancel();
       speedTimer= null;
@@ -1201,7 +1207,7 @@ class MeeduPlayerController {
     }
     int position = 0;
 
-    position = _videoPlayerController!.value.position.inSeconds;
+    position = videoPlayerControllerX!.value.position.inSeconds;
 
     await seekTo(Duration(seconds: position + seconds));
     if (playing) {
@@ -1255,9 +1261,9 @@ class MeeduPlayerController {
         WakelockPlus.disable();
       }
 
-      _videoPlayerController?.removeListener(_listener);
-      await _videoPlayerController?.dispose();
-      _videoPlayerController = null;
+      videoPlayerControllerX?.removeListener(_listener);
+      await videoPlayerControllerX?.dispose();
+      videoPlayerControllerX = null;
 
       //disposeVideoPlayerController();
       if (onVideoPlayerClosed != null) {
@@ -1270,11 +1276,11 @@ class MeeduPlayerController {
   }
 
   double getAspectRatio() {
-    if (_videoPlayerController == null) {
+    if (videoPlayerControllerX == null) {
       return 16 / 9;
     }
-    return _videoPlayerController!.value.size.width /
-        _videoPlayerController!.value.size.height;
+    return videoPlayerControllerX!.value.size.width /
+        videoPlayerControllerX!.value.size.height;
   }
 
   /// enter to picture in picture mode only Android
@@ -1301,7 +1307,7 @@ class MeeduPlayerController {
   }
 
   Future<void> _enterPipDesktop(BuildContext context) async {
-    if (_videoPlayerController == null) return;
+    if (videoPlayerControllerX == null) return;
     if (!fullscreen.value) {
       setVideoAsAppFullScreen(context);
     }
