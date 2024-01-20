@@ -219,7 +219,7 @@ class _ControlsContainerState extends State<ControlsContainer> {
       Offset localPosition, MeeduPlayerController controller) async {
     controller.showBrightnessStatus.value = true;
     controller.showVolumeStatus.value = false;
-
+    await controller.getCurrentBrightness();
     _currentBrightness.value = controller.brightness.value;
     _onDragStartBrightness = _currentBrightness.value;
     _verticalDragStartOffset = localPosition;

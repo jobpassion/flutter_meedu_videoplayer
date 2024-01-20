@@ -493,15 +493,16 @@ class MeeduPlayerController {
       final lastBufferedEnd = buffered.last.end.inSeconds;
 
       // Check if the video is playing and the position is near the end of the buffer
-      if (VideoPlayerUsed.fvp) {
-        isBuffering.value =
-            value.isPlaying && position.inSeconds > (lastBufferedEnd);
-      } else {
-        isBuffering.value =
-            value.isPlaying && position.inSeconds >= (lastBufferedEnd);
-      }
+      // if (VideoPlayerUsed.fvp) {
+      //   isBuffering.value =
+      //       value.isPlaying && position.inSeconds > (lastBufferedEnd);
+      // } else {
+      //   isBuffering.value =
+      //       value.isPlaying && position.inSeconds >= (lastBufferedEnd);
+      // }
       //respect the native is buffering flag
-      isBuffering.value = isBuffering.value || value.isBuffering;
+      // isBuffering.value = isBuffering.value || (value.isBuffering && !value.isPlaying);
+      // isBuffering.value = value.isBuffering;
 
       // Calculate the buffered percentage relative to the total video duration
       // Update the buffered percentage value
@@ -582,12 +583,17 @@ class MeeduPlayerController {
         Duration seekTo = Duration.zero,
       }) async {
     try {
+      if(videoPlayerController.value.isPlaying){
+        dataStatus.status.value = DataStatus.loaded;
+      }else{
+        dataStatus.status.value = DataStatus.loading;
+      }
+      ScreenBrightness().setAutoReset(false);
       if(videoPlayerControllerX == videoPlayerController){
         return;
       }
       _autoPlay = autoplay;
       _looping = looping;
-      dataStatus.status.value = DataStatus.loading;
 
       // if we are playing a video
       // if (videoPlayerControllerX != null &&
