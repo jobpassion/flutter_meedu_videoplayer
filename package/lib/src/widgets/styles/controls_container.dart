@@ -604,16 +604,16 @@ class _ControlsContainerState extends State<ControlsContainer> {
                   }
                 : null,
         onHorizontalDragUpdate:
-            (_.mobileControls && !widget.preventVerticalDrag)
+            (_.mobileControls && !widget.preventVerticalDrag && (_.enabledControls.seekSwipes))
                 ? (details) => onHorizontalDragUpdate(details, _)
                 : null,
-        onHorizontalDragEnd: (_.mobileControls && !widget.preventVerticalDrag)
+        onHorizontalDragEnd: (_.mobileControls && !widget.preventVerticalDrag && (_.enabledControls.seekSwipes))
             ? (details) => onHorizontalDragEnd(details, _)
             : null,
-        onVerticalDragUpdate: (_.mobileControls && !widget.preventVerticalDrag)
+        onVerticalDragUpdate: (_.mobileControls && !widget.preventVerticalDrag && (_.enabledControls.volumeSwipes || _.enabledControls.brightnessSwipes))
             ? (details) => onVerticalDragUpdate(details, _)
             : null,
-        onVerticalDragEnd: (_.mobileControls && !widget.preventVerticalDrag)
+        onVerticalDragEnd: (_.mobileControls && !widget.preventVerticalDrag && (_.enabledControls.volumeSwipes || _.enabledControls.brightnessSwipes))
             ? (details) => onVerticalDragEnd(details, _)
             : null,
         child: AnimatedContainer(
